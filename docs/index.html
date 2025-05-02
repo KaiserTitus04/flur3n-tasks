@@ -74,12 +74,16 @@ fetch('WeeklyPlans/Tasks_latest.xlsx')
 
     // Körper
     const bodyHTML = rows.map(r=>{
-      return '<tr>' + r.map((c,i)=>{
-        if(i===0) return `<td class="task">${c||''}</td>`;          // Beschreibungs‑Spalte
-        if(c==='✓') return '<td class="tick">✓</td>';
-        if((c||'').toString().toUpperCase()==='X') return '<td class="cross">❌</td>';
-        return '<td class="person"></td>';                           // leer
-      }).join('') + '</tr>';
+      // auf volle Länge auffüllen
+      while(r.length < lastCol+1) r.push(undefined);
+
+      return '<tr>'+ [...Array(lastCol+1).keys()].map(i=>{
+          const c = r[i];
+          if(i===0) return `<td class="task">${c||''}</td>`;
+          if(c==='✓') return '<td class="tick">✓</td>';
+          if((c||'').toString().toUpperCase()==='X') return '<td class="cross">❌</td>';
+          return '<td class="person"></td>';
+      }).join('') +'</tr>';
     }).join('');
 
     tbl.innerHTML += `<tbody>${bodyHTML}</tbody>`;
