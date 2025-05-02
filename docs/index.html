@@ -3,38 +3,65 @@
 <head>
 <meta charset="utf-8">
 <title>FLUR 3N – Weekly Tasks</title>
-<link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css">
+
+<!-- kleine CSS‑Grundlage -->
 <style>
 body{font-family:system-ui,Arial,sans-serif;margin:2rem}
-h1{text-align:center}
+h1{text-align:center;margin-bottom:1.5rem}
+.table-wrap{overflow-x:auto;border:1px solid #ccc;border-radius:.25rem}
+table{border-collapse:collapse;min-width:800px}
+th,td{border:1px solid #ccc;padding:.35rem .5rem;text-align:center}
+th{background:#f0f0f0;font-weight:600;position:sticky;top:0}
+.tick{color:#0a0}
+.cross{color:#a00}
+.empty{color:#ccc}
 </style>
+
+<!-- SheetJS + simple‑datatables (für Scroll‑/Sort‑Header) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
 </head>
 <body>
 <h1>FLUR 3N – Weekly Tasks</h1>
-<table id="tasks"></table>
+
+<div class="table-wrap"><table id="tasks"></table></div>
 <p style="text-align:right">
   <a href="WeeklyPlans/Tasks_latest.xlsx" download>Download Excel</a>
 </p>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
 <script>
+// 1) Excel aus gleichem Repo laden
 fetch('WeeklyPlans/Tasks_latest.xlsx')
   .then(r => r.arrayBuffer())
   .then(buf => {
-    const wb = XLSX.read(buf,{type:'array'});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const arr = XLSX.utils.sheet_to_json(ws,{header:1,range:3});
-    const head=arr.shift(); const rows=arr.filter(r=>r.length);
+    // 2) Workbook -> Array
+    const wb  = XLSX.read(buf,{type:'array'});
+    const ws  = wb.Sheets[wb.SheetNames[0]];
+    const arr = XLSX.utils.sheet_to_json(ws,{header:1,range:3}); // ab Zeile 4
+    const head=arr.shift();
+    const rows=arr.filter(r=>r.length);
+
+    // 3) HTML-Tabelle bauen
     const tbl=document.getElementById('tasks');
-    tbl.innerHTML='<thead><tr>'+head.map(c=>`<th>${c||''}</th>`).join('')
-      +'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>`<td>${String(c)
-      .replace('✓','✅').replace('X','❌')}</td>`).join('')+'</tr>').join('')
-      +'</tbody>';
-    new simpleDatatables.DataTable(tbl,{fixedHeight:true,perPage:20,searchable:false});
+    // Header
+    tbl.innerHTML='<thead><tr>'+head.map((c,i)=>
+        `<th>${i===0?'Tasks/Names':(c||'')}</th>`).join('')+'</tr></thead>';
+    // Body
+    const bodyHTML=rows.map(r=>{
+      return '<tr>'+r.map((c,i)=>{
+        const v=String(c||'');
+        if(i===0) return `<td style="text-align:left">${v}</td>`;
+        if(v==='✓') return '<td class="tick">✓</td>';
+        if(v.toUpperCase()==='X') return '<td class="cross">❌</td>';
+        return '<td class="empty">·</td>';
+      }).join('')+'</tr>';
+    }).join('');
+    tbl.innerHTML+=`<tbody>${bodyHTML}</tbody>`;
+
+    // 4) DataTable nur für hübsches Scroll‑/Sort-Verhalten
+    new simpleDatatables.DataTable(tbl,{fixedHeight:true,searchable:false,
+                                       perPage:25,paging:false});
   });
 </script>
 </body>
 </html>
-
