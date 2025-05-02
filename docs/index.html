@@ -18,49 +18,45 @@ td.person{width:55px;text-align:center}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-</head>
-<body>
-<h1>FLUR 3N – Weekly Tasks</h1>
-
-<div class="wrap"><table id="tbl"></table></div>
-<p style="text-align:right"><a href="WeeklyPlans/Tasks_latest.xlsx" download>Download Excel</a></p>
-
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
 <script>
 fetch('WeeklyPlans/Tasks_latest.xlsx')
-  .then(r=>r.arrayBuffer())
-  .then(buf=>{
-     const wb=XLSX.read(buf,{type:'array'});
-     const ws=wb.Sheets[wb.SheetNames[0]];
-     const data=XLSX.utils.sheet_to_json(ws,{header:1,range:3});
-     if(!data.length) return;
+  .then(r => r.arrayBuffer())
+  .then(buf => {
+    const wb = XLSX.read(buf,{type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
 
-     const head=data.shift()
-                    .filter(x=>x!==undefined&&x!=="")   // leere Spalten weg
-     head.unshift("Task / Description");                // erste Spalte
-     const cols=head.length;
+    // 1) komplettes Sheet → Array ab Zeile 4
+    let rows = XLSX.utils.sheet_to_json(ws,{header:1,range:3});
 
-     const rows=data.map(r=>{
-        while(r.length<cols) r.push("");  // zur Sicherheit auffüllen
-        return r;
-     });
+    // 2) Spaltenbreite dynamisch: letzte Zelle in Kopfzeile suchen
+    const head = rows.shift();
+    const lastCol = head.map((v,i)=>[v,i]).filter(([v])=>v!==undefined).pop()[1];
+    head.length = lastCol+1;                   // kappe rechts leere Header‑Zellen
+    rows = rows.map(r => { r.length = lastCol+1; return r; });
 
-     const tbl=document.getElementById('tbl');
+    // 3) Task‑Zeilen begrenzen: alles nach erster völlig leeren Zeile verwerfen
+    const firstEmpty = rows.findIndex(r => r.slice(0,lastCol+1).every(c=>c===undefined));
+    if(firstEmpty !== -1) rows = rows.slice(0, firstEmpty);
 
-     // head
-     tbl.innerHTML='<thead><tr>'+head.map((h,i)=>
-          `<th>${i?h:h}</th>`).join('')+'</tr></thead>';
+    // 4) Tabelle erzeugen
+    const tbl = document.getElementById('tasks');
+    tbl.innerHTML =
+      '<thead><tr>'+head.map((c,i)=>`<th>${i===0?"Task / Description":c||""}</th>`).join('')+'</tr></thead>';
 
-     // body
-     tbl.innerHTML+='<tbody>'+rows.map(r=>{
-        return '<tr>'+r.map((c,i)=>{
-           if(i===0) return `<td class="task">${c}</td>`;
-           const v=String(c).trim().toUpperCase();
-           if(v==="X") return '<td class="cross">❌</td>';
-           if(v==="✓") return '<td class="tick">✓</td>';
-           return '<td class="person"></td>';
-        }).join('')+'</tr>';
-     }).join('')+'</tbody>';
+    const body = rows.map(r=>{
+      return '<tr>'+r.map((c,i)=>{
+        if(i===0) return `<td class="task">${c||""}</td>`;
+        if(c==='✓')     return '<td class="tick">✓</td>';
+        if((c||"").toString().toUpperCase()==='X') return '<td class="cross">❌</td>';
+        return '<td class="person"></td>';
+      }).join('')+'</tr>';
+    }).join('');
+
+    tbl.innerHTML += `<tbody>${body}</tbody>`;
+    new simpleDatatables.DataTable(tbl,{searchable:false,paging:false,fixedHeight:true});
   });
 </script>
+
 </body>
 </html>
