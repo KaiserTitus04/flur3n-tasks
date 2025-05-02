@@ -2,65 +2,64 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>FLUR 3N – Weekly Tasks</title>
-
-<!-- kleine CSS‑Grundlage -->
+<title>FLUR 3N – Weekly Tasks</title>
 <style>
-body{font-family:system-ui,Arial,sans-serif;margin:2rem}
-h1{text-align:center;margin-bottom:1.5rem}
-.table-wrap{overflow-x:auto;border:1px solid #ccc;border-radius:.25rem}
-table{border-collapse:collapse;min-width:800px}
-th,td{border:1px solid #ccc;padding:.35rem .5rem;text-align:center}
-th{background:#f0f0f0;font-weight:600;position:sticky;top:0}
-.tick{color:#0a0}
-.cross{color:#a00}
-.empty{color:#ccc}
+body{font-family:system-ui,Arial,sans-serif;margin:1.5rem}
+h1{text-align:center;margin-bottom:1rem}
+
+.wrap{overflow-x:auto;border:1px solid #666;border-radius:4px}
+table{border-collapse:collapse;border:1px solid #666;min-width:980px}
+th,td{border:1px solid #666;padding:.35rem .5rem}
+th{background:#f5f5f5;font-weight:600;text-align:center;position:sticky;top:0}
+td.task{width:340px;white-space:pre-wrap;text-align:left}
+td.person{width:55px;text-align:center}
+.tick{color:#0a0;font-size:1.1rem}
+.cross{color:#a00;font-size:1.1rem}
 </style>
 
-<!-- SheetJS + simple‑datatables (für Scroll‑/Sort‑Header) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
 </head>
 <body>
 <h1>FLUR 3N – Weekly Tasks</h1>
 
-<div class="table-wrap"><table id="tasks"></table></div>
-<p style="text-align:right">
-  <a href="WeeklyPlans/Tasks_latest.xlsx" download>Download Excel</a>
-</p>
+<div class="wrap"><table id="tbl"></table></div>
+<p style="text-align:right"><a href="WeeklyPlans/Tasks_latest.xlsx" download>Download Excel</a></p>
 
 <script>
-// 1) Excel aus gleichem Repo laden
 fetch('WeeklyPlans/Tasks_latest.xlsx')
-  .then(r => r.arrayBuffer())
-  .then(buf => {
-    // 2) Workbook -> Array
-    const wb  = XLSX.read(buf,{type:'array'});
-    const ws  = wb.Sheets[wb.SheetNames[0]];
-    const arr = XLSX.utils.sheet_to_json(ws,{header:1,range:3}); // ab Zeile 4
-    const head=arr.shift();
-    const rows=arr.filter(r=>r.length);
+  .then(r=>r.arrayBuffer())
+  .then(buf=>{
+     const wb=XLSX.read(buf,{type:'array'});
+     const ws=wb.Sheets[wb.SheetNames[0]];
+     const data=XLSX.utils.sheet_to_json(ws,{header:1,range:3});
+     if(!data.length) return;
 
-    // 3) HTML-Tabelle bauen
-    const tbl=document.getElementById('tasks');
-    // Header
-    tbl.innerHTML='<thead><tr>'+head.map((c,i)=>
-        `<th>${i===0?'Tasks/Names':(c||'')}</th>`).join('')+'</tr></thead>';
-    // Body
-    const bodyHTML=rows.map(r=>{
-      return '<tr>'+r.map((c,i)=>{
-        const v=String(c||'');
-        if(i===0) return `<td style="text-align:left">${v}</td>`;
-        if(v==='✓') return '<td class="tick">✓</td>';
-        if(v.toUpperCase()==='X') return '<td class="cross">❌</td>';
-        return '<td class="empty">·</td>';
-      }).join('')+'</tr>';
-    }).join('');
-    tbl.innerHTML+=`<tbody>${bodyHTML}</tbody>`;
+     const head=data.shift()
+                    .filter(x=>x!==undefined&&x!=="")   // leere Spalten weg
+     head.unshift("Task / Description");                // erste Spalte
+     const cols=head.length;
 
-    // 4) DataTable nur für hübsches Scroll‑/Sort-Verhalten
-    new simpleDatatables.DataTable(tbl,{fixedHeight:true,searchable:false,
-                                       perPage:25,paging:false});
+     const rows=data.map(r=>{
+        while(r.length<cols) r.push("");  // zur Sicherheit auffüllen
+        return r;
+     });
+
+     const tbl=document.getElementById('tbl');
+
+     // head
+     tbl.innerHTML='<thead><tr>'+head.map((h,i)=>
+          `<th>${i?h:h}</th>`).join('')+'</tr></thead>';
+
+     // body
+     tbl.innerHTML+='<tbody>'+rows.map(r=>{
+        return '<tr>'+r.map((c,i)=>{
+           if(i===0) return `<td class="task">${c}</td>`;
+           const v=String(c).trim().toUpperCase();
+           if(v==="X") return '<td class="cross">❌</td>';
+           if(v==="✓") return '<td class="tick">✓</td>';
+           return '<td class="person"></td>';
+        }).join('')+'</tr>';
+     }).join('')+'</tbody>';
   });
 </script>
 </body>
