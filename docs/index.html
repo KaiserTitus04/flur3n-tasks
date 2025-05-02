@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FLUR 3N – Weekly Tasks</title>
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css">
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:2rem}
+h1{text-align:center}
+</style>
+</head>
+<body>
+<h1>FLUR 3N – Weekly Tasks</h1>
+<table id="tasks"></table>
+<p style="text-align:right">
+  <a href="WeeklyPlans/Tasks_latest.xlsx" download>Download Excel</a>
+</p>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
+<script>
+fetch('WeeklyPlans/Tasks_latest.xlsx')
+  .then(r => r.arrayBuffer())
+  .then(buf => {
+    const wb = XLSX.read(buf,{type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const arr = XLSX.utils.sheet_to_json(ws,{header:1,range:3});
+    const head=arr.shift(); const rows=arr.filter(r=>r.length);
+    const tbl=document.getElementById('tasks');
+    tbl.innerHTML='<thead><tr>'+head.map(c=>`<th>${c||''}</th>`).join('')
+      +'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>`<td>${String(c)
+      .replace('✓','✅').replace('X','❌')}</td>`).join('')+'</tr>').join('')
+      +'</tbody>';
+    new simpleDatatables.DataTable(tbl,{fixedHeight:true,perPage:20,searchable:false});
+  });
+</script>
+</body>
+</html>
+
