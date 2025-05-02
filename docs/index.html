@@ -4,19 +4,14 @@
 <meta charset="utf-8">
 <title>FLUR 3N – Weekly Tasks</title>
 
-<!-- simple‑datatables liefert Scroll/Such‑Funktionen -->
 <link rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css">
 
 <style>
-/* ---------- Grundlayout ---------- */
 body{font-family:system-ui,Arial,sans-serif;margin:1.6rem}
 h1{text-align:center;margin-bottom:1.2rem}
 
-/* Rahmen + Scroll‑Container */
 .table-wrap{overflow-x:auto;border:1px solid #666;border-radius:4px}
-
-/* ---------- Tabelle ---------- */
 table{border-collapse:collapse;border:1px solid #666;min-width:900px}
 th,td{border:1px solid #666;padding:.4rem .5rem}
 th{background:#f5f5f5;font-weight:600;text-align:center;position:sticky;top:0}
@@ -24,6 +19,7 @@ td.task{width:320px;text-align:left;white-space:pre-wrap}
 td.person{width:55px;text-align:center}
 .tick {color:#0a0;font-size:1.1rem}
 .cross{color:#a00;font-size:1.1rem}
+.empty{color:#ccc}
 </style>
 </head>
 
@@ -31,74 +27,73 @@ td.person{width:55px;text-align:center}
 <h1>FLUR 3N – Weekly Tasks</h1>
 
 <div class="table-wrap">
-  <table id="tasks"></table>
+  <table id="tasks"><tbody><tr><td>Lade Daten …</td></tr></tbody></table>
 </div>
 
 <p style="text-align:right">
   <a href="WeeklyPlans/Tasks_latest.xlsx" download>Download Excel</a>
 </p>
 
-<!-- SheetJS (XLSX‑Parser) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<!-- simple‑datatables (Header‑Fixierung, Keyboard‑Scroll) -->
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
 
 <script>
-fetch('WeeklyPlans/Tasks_latest.xlsx')
-  .then(r => r.arrayBuffer())
-  .then(buf => {
-    /* 1 | Workbook -> Array ---------------------------------------------- */
+(async ()=>{
+  const tbl = document.getElementById('tasks');
+
+  // Excel holen
+  let buf;
+  try {
+    const r = await fetch('WeeklyPlans/Tasks_latest.xlsx');
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    buf = await r.arrayBuffer();
+  } catch(err) {
+    tbl.innerHTML = `<tbody><tr><td style="color:#a00;">Download fehlgeschlagen: ${err}</td></tr></tbody>`;
+    return;
+  }
+
+  // Workbook -> Array
+  let rows = [];
+  try{
     const wb  = XLSX.read(buf,{type:'array'});
-    const ws  = wb.Sheets[wb.SheetNames[0]];           // erstes Tabellenblatt
-    let rows  = XLSX.utils.sheet_to_json(ws,{header:1,range:3}); // ab Zeile 4
+    const ws  = wb.Sheets[wb.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(ws,{header:1,range:3});
+  }catch(err){
+    tbl.innerHTML = `<tbody><tr><td style="color:#a00;">Parsen fehlgeschlagen: ${err}</td></tr></tbody>`;
+    return;
+  }
 
-    /* 2 | Reale Spaltenbreite bestimmen ---------------------------------- */
-    const head = rows.shift();                         // Kopfzeile entfernen
-    const lastCol = head.map((v,i)=>[v,i])             // letzte nicht‑leere Zelle
-                       .filter(([v])=>v!==undefined).pop()[1];
-    head.length = lastCol+1;
-    rows = rows.map(r => { r.length = lastCol+1; return r; });
+  if(rows.length===0){
+    tbl.innerHTML = `<tbody><tr><td>Keine Daten im Sheet.</td></tr></tbody>`;
+    return;
+  }
 
-    /* 3 | Nur Task‑Zeilen bis zur ersten komplett leeren ----------------- */
-    const cut = rows.findIndex(r=>r.every(c=>c===undefined));
-    if(cut !== -1) rows = rows.slice(0,cut);
+  // Header + Kürzen leerer Spalten
+  const head = rows.shift();
+  const lastCol = head.reduce((acc,v,i)=> v!==undefined ? i : acc, 0);
+  head.length = lastCol+1;
+  rows = rows.map(r=>{ while(r.length<lastCol+1) r.push(undefined); return r; });
 
-    /* 4 | HTML‑Tabelle aufbauen ------------------------------------------ */
-    const tbl = document.getElementById('tasks');
+  // Bis erste komplett leere Zeile
+  const cut = rows.findIndex(r=>r.every(c=>c===undefined));
+  if(cut!==-1) rows = rows.slice(0,cut);
 
-    // Kopf
-    tbl.innerHTML =
-      '<thead><tr>' +
-      head.map((c,i)=>`<th>${i===0 ? 'Task / Description' : (c||'')}</th>`).join('')
-      + '</tr></thead>';
+  // Tabelle bauen
+  const thead = '<thead><tr>'+head.map((c,i)=>`<th>${i?c||'':"Task / Description"}</th>`).join('')+'</tr></thead>';
+  const tbody = '<tbody>'+rows.map(r=>{
+    return '<tr>'+r.map((c,i)=>{
+      if(i===0) return `<td class="task">${c||''}</td>`;
+      if(c==='✓') return '<td class="tick">✓</td>';
+      if((c||'').toString().toUpperCase()==='X') return '<td class="cross">❌</td>';
+      return '<td class="person"></td>';
+    }).join('')+'</tr>';
+  }).join('')+'</tbody>';
 
-    // Körper
-    const bodyHTML = rows.map(r=>{
-      // auf volle Länge auffüllen
-      while(r.length < lastCol+1) r.push(undefined);
+  tbl.innerHTML = thead+tbody;
 
-      return '<tr>'+ [...Array(lastCol+1).keys()].map(i=>{
-          const c = r[i];
-          if(i===0) return `<td class="task">${c||''}</td>`;
-          if(c==='✓') return '<td class="tick">✓</td>';
-          if((c||'').toString().toUpperCase()==='X') return '<td class="cross">❌</td>';
-          return '<td class="person"></td>';
-      }).join('') +'</tr>';
-    }).join('');
-
-    tbl.innerHTML += `<tbody>${bodyHTML}</tbody>`;
-
-    /* 5 | simple‑datatables initialisieren (Sort‑Header, nicer scroll) --- */
-    new simpleDatatables.DataTable(tbl,{
-      searchable:false,
-      paging:false,
-      fixedHeight:true              // hält Header sichtbar
-    });
-  })
-  .catch(err => {                   // Fehleranzeige (z.B. fehlende Datei)
-    document.getElementById('tasks').innerHTML =
-      `<tbody><tr><td style="color:#a00;">${err}</td></tr></tbody>`;
-  });
+  // DataTable nur wenn Kopf+Körper vorhanden
+  new simpleDatatables.DataTable(tbl,{searchable:false,paging:false,fixedHeight:true});
+})();
 </script>
 </body>
 </html>
