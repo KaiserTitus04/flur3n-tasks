@@ -2,95 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>FLUR 3N – Weekly Tasks</title>
-
-<link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css">
-
+<title>FLUR 3N – Weekly Tasks (Excel‑Viewer)</title>
 <style>
-body{font-family:Arial,Helvetica,sans-serif;margin:1.2rem}
-h1{text-align:center;margin-bottom:1rem}
-
-/* ---------------- Excel‑Look ------------- */
-.wrap{overflow:auto;border:2px solid #000;border-radius:4px;max-width:100%}
-table{border-collapse:collapse}
-th,td{border:1px solid #000;padding:0;text-align:center}
-td.task{width:320px;text-align:left;white-space:pre-wrap;padding:.35rem .4rem}
-td.person{width:60px;height:28px}
-th.rotate{height:140px;width:24px;padding:0;vertical-align:bottom}
-th.rotate>div{transform:translate(0,100%) rotate(-90deg);
-              width:140px}
-th.num{width:60px;background:#f0f0f0;font-weight:600}
-
-.tick {color:#0a0;font-size:1.1rem}
-.cross{color:#a00;font-size:1.1rem}
+html,body{margin:0;height:100%}
+iframe{width:100%;height:100%;border:none}
 </style>
 </head>
-
 <body>
-<h1>FLUR 3N – Weekly Tasks</h1>
-
-<div class="wrap">
-  <table id="tasks"><tbody><tr><td>Lade Daten …</td></tr></tbody></table>
-</div>
-
-<p style="text-align:right;margin-top:.7rem">
-  <a href="WeeklyPlans/Tasks_latest.xlsx" download>Download Excel</a>
-</p>
-
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
-
-<script>
-(async()=>{
-  const tbl=document.getElementById('tasks');
-
-  /* --- Daten aus XLSX holen --- */
-  let wb,ws,rows;
-  try{
-    const r=await fetch('WeeklyPlans/Tasks_latest.xlsx');
-    wb=XLSX.read(await r.arrayBuffer(),{type:'array'});
-    ws=wb.Sheets[wb.SheetNames[0]];
-    rows=XLSX.utils.sheet_to_json(ws,{header:1,range:3});
-  }catch(err){
-    tbl.innerHTML=`<tbody><tr><td style="color:#a00;">Fehler: ${err}</td></tr></tbody>`;
-    return;
-  }
-  if(!rows.length){tbl.innerHTML='<tbody><tr><td>Keine Daten.</td></tr></tbody>';return;}
-
-  /* --- Header vorbereiten (Spaltennummer + Namen vertikal) --- */
-  const headRow=rows.shift();
-  const lastCol=headRow.reduce((a,v,i)=>v!==undefined?i:a,0);
-  headRow.length=lastCol+1;                              // rechte Leerspalten weg
-  rows=rows.map(r=>{while(r.length<lastCol+1)r.push(undefined);return r;});
-  const firstEmpty=rows.findIndex(r=>r.every(c=>c===undefined));
-  if(firstEmpty!==-1) rows=rows.slice(0,firstEmpty);
-
-  /* --- HTML‑Kopf: Spaltennummer + Name vertikal --- */
-  const numRow = '<tr><th class="task num"></th>' +
-      headRow.slice(1).map(_=>'<th class="num"></th>').join('')+'</tr>';
-  const nameRow='<tr>'
-      +'<th class="task">Task / Description</th>'
-      +headRow.slice(1).map(n=>
-        `<th class="rotate"><div>${n||''}</div></th>`).join('')
-      +'</tr>';
-
-  /* --- Body bauen --- */
-  const bodyRows=rows.map(r=>{
-    return '<tr>'+r.map((c,i)=>{
-      if(i===0) return `<td class="task">${c||''}</td>`;
-      if(c==='✓')       return '<td class="tick">✓</td>';
-      if((c||'').toString().toUpperCase()==='X') return '<td class="cross">❌</td>';
-      return '<td class="person"></td>';
-    }).join('')+'</tr>';
-  }).join('');
-
-  tbl.innerHTML='<thead>'+numRow+nameRow+'</thead><tbody>'+bodyRows+'</tbody>';
-
-  /* Datatable nur für Scroll/Keynav, Sort abgeschaltet */
-  new simpleDatatables.DataTable(tbl,{searchable:false,paging:false,
-                                      sortable:false,fixedHeight:true});
-})();
-</script>
+<!-- Office Online Viewer -->
+<iframe
+  src="https://view.officeapps.live.com/op/embed.aspx?src=https://github.com/KaiserTitus04/flur-3n-tasks/raw/refs/heads/main/docs/WeeklyPlans/Tasks_latest.xlsx"
+  frameborder="0">
+</iframe>
 </body>
 </html>
