@@ -78,6 +78,19 @@ def build_plan(due: dt.date, absent: List[str], items: List[str]) -> Path:
     # (1) alte X in Basis‑Datei zu ✓ konvertieren
     convert_x_to_tick(ws, rows, pcols)
 
+    # --- ZÄHLT, wie viele ✓ eine Person schon hat ----------------------------
+    def task_counts(ws, rows, pcols) -> Dict[str, int]:
+        counts = {name: 0 for name in pcols}
+        for r in rows:
+            for name, col in pcols.items():
+                if str(ws.cell(row=r, column=col).value).strip() == "✓":
+                    counts[name] += 1
+        return counts
+    
+    # (1b) Summen der erledigten Tasks ermitteln
+    done_counts = task_counts(ws, rows, pcols)
+
+
     # (2) Pointer auf Basis des _alten_ Plans bestimmen
     last_ws = openpyxl.load_workbook(last_path).active if last_path else None
     ptr     = start_pointer(last_ws, rows, pcols, order)
@@ -94,12 +107,19 @@ def build_plan(due: dt.date, absent: List[str], items: List[str]) -> Path:
         done = {n for n, c in pcols.items()
                   if str(ws.cell(row=r, column=c).value).strip() == "✓"}
         excluded = done | weekly_assigned
-        cand = pick_candidate(cycle, excluded)
-        if cand:
+        
+        # --- Kandidat mit den wenigsten erledigten Aufgaben wählen --------
+        pool = [p for p in cycle if p not in (done | weekly_assigned)]
+        if pool:
+            # kleinsten Zähler finden, bei Gleichstand per Zufall
+            m = min(done_counts[p] for p in pool)
+            cand = random.choice([p for p in pool if done_counts[p] == m])
             ws.cell(row=r, column=pcols[cand], value="X")
             weekly_assigned.add(cand)
+            done_counts[cand] += 1          # Zähler sofort erhöhen
         else:
-            rows_without_new_x.append(r)   # hier konnte nichts vergeben werden
+            rows_without_new_x.append(r)
+
 
     # Meta‑Daten
     mrow = next_meta_row(ws, 17)
