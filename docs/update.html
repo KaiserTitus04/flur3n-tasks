@@ -1,20 +1,18 @@
-<!doctype html>
-<html><head>
-<meta charset="utf-8"><title>FLUR 3N – Report Task</title>
+<!doctype html><html><head>
+<meta charset="utf-8"><title>Task melden</title>
 <style>
-body{font-family:system-ui,Arial;padding:1.6rem;max-width:500px;margin:auto}
+body{font-family:system-ui,Arial;max-width:420px;margin:2rem auto}
 label{display:block;margin:.8rem 0 .2rem}
-button{margin-top:1.2rem;padding:.4rem 1rem}
+button{margin-top:1rem;padding:.4rem 1rem}
+#msg{margin-top:.8rem}
 </style>
 </head><body>
-<h2>Task erledigt? – kurz eintragen:</h2>
+<h2>Ich habe meinen Task erledigt</h2>
 
-<label>Name:
-  <input id="name" required>
-</label>
+<label>Name:<input id="name" required></label>
 
-<label>Task diese Woche:
-  <select id="task"></select>
+<label>Task dieser Woche:
+  <select id="task"><option>Lade Liste …</option></select>
 </label>
 
 <label>Kommentar (optional):
@@ -26,29 +24,34 @@ button{margin-top:1.2rem;padding:.4rem 1rem}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script>
-const SHEET_API = 'https://script.google.com/macros/s/AKfycbwvVTEA2W2ECiEINGi6frRuLI_oun157C-0VmC5IX8EIsUi82n_INf1cb9H2zCxezkp/exec';
-const KEY       = 'YOUR_SUPER_SECRET_KEY';
-const PLAN_XLSX = 'WeeklyPlans/Tasks_latest.xlsx';
+const API   = 'https://script.google.com/macros/s/AKfycbwvVTEA2W2ECiEINGi6frRuLI_oun157C-0VmC5IX8EIsUi82n_INf1cb9H2zCxezkp/exec';   // Web-App URL
+const KEY   = 'YOUR_SUPER_SECRET_KEY';                                        //  == SECRET
+const XLS   = './WeeklyPlans/Tasks_latest.xlsx';                   // relativer Pfad
 
-/* --- 1 | Dropdown füllen ------------------------------------------------ */
-fetch(PLAN_XLSX).then(r=>r.arrayBuffer()).then(buf=>{
-  const ws=XLSX.read(buf,{type:'array'}).Sheets.Sheet1;
-  const arr=XLSX.utils.sheet_to_json(ws,{header:1,range:3});
-  const sel=document.getElementById('task');
-  arr.forEach(r=>r[0] && sel.insertAdjacentHTML('beforeend',`<option>${r[0]}</option>`));
-});
+/* --- 1 | Dropdown füllen ----------------------------------------- */
+fetch(XLS).then(r=>r.arrayBuffer()).then(buf=>{
+  const ws = XLSX.read(buf,{type:'array'}).Sheets.Sheet1;
+  // ab Zeile 5 Spalte A (Tasks) bis erste Leerzeile
+  const arr = XLSX.utils.sheet_to_json(ws,{header:1,range:4});      
+  const sel = document.getElementById('task');
+  sel.innerHTML='';                                               // Platzhalter löschen
+  arr.forEach(r=>{if(r[0]) sel.insertAdjacentHTML('beforeend',`<option>${r[0]}</option>`);});
+}).catch(e=>document.getElementById('msg').textContent='⚠ Aufgabenliste konnte nicht geladen werden');
 
-/* --- 2 | Formular absenden --------------------------------------------- */
+/* --- 2 | Formular absenden --------------------------------------- */
 function submit(){
-  const n=$('#name'), t=$('#task'), c=$('#comment'), m=$('#msg');
-  if(!n.value.trim()){m.textContent='Name fehlt';return;}
-  fetch(SHEET_API+'?'+new URLSearchParams({
-      key:KEY, person:n.value.trim(), task:t.value, comment:c.value.trim()
-  }),{method:'POST'}).then(r=>r.text()).then(txt=>{
-      m.textContent = txt==='ok' ? '✓ gespeichert, danke!' : 'Fehler: '+txt;
-      c.value='';
-  });
+  const n=$('#name').value.trim(), t=$('#task').value, c=$('#comment').value.trim(), m=$('#msg');
+  if(!n){m.textContent='Bitte Namen eingeben';return;}
+  fetch(API,{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({key:KEY,person:n,task:t,comment:c})
+  })
+  .then(r=>r.text())
+  .then(txt=> m.textContent = txt==='ok' ? '✓ gespeichert – Danke!' : 'Fehler: '+txt)
+  .catch(err=>m.textContent='Netzwerk-Fehler '+err);
 }
 function $(q){return document.querySelector(q);}
 </script>
+<p><a href="index.html">⬅ zurück zum Plan</a></p>
 </body></html>
