@@ -12,24 +12,6 @@ button{margin-top:1rem;padding:.4rem 1rem}
 <label>Name:<input id="name" required></label>
 
 <label>Task dieser Woche:
-  <select id="task"><option>Lade Liste …</option></select>
-</label>
-
-<label>Kommentar (optional):
-  <input id="comment">
-</label>
-
-<button onclick="submit()">✓ Eintragen</button>
-<p id="msg"></p>
-
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script>
-const API   = 'https://script.google.com/macros/s/AKfycbwvVTEA2W2ECiEINGi6frRuLI_oun157C-0VmC5IX8EIsUi82n_INf1cb9H2zCxezkp/exec';   // Web-App URL
-const KEY   = 'YOUR_SUPER_SECRET_KEY';                                        //  == SECRET
-const XLS   = './WeeklyPlans/Tasks_latest.xlsx';                   // relativer Pfad
-
-/* --- 1 | Dropdown füllen ----------------------------------------- */
-<label>Task diese Woche:
   <select id="task">
     <option>Sort cupboards, Clean all fridges and waste containers & Vacuum</option>
     <option>Clean sink, cooking area, devices and unknown items twice a week</option>
@@ -41,6 +23,17 @@ const XLS   = './WeeklyPlans/Tasks_latest.xlsx';                   // relativer 
   </select>
 </label>
 
+<label>Kommentar (optional):
+  <input id="comment">
+</label>
+
+<button onclick="submit()">✓ Eintragen</button>
+<p id="msg"></p>
+
+<script>
+const API   = 'https://script.google.com/macros/s/AKfycbwvVTEA2W2ECiEINGi6frRuLI_oun157C-0VmC5IX8EIsUi82n_INf1cb9H2zCxezkp/exec';   // Web-App URL
+const KEY   = 'YOUR_SUPER_SECRET_KEY';                                        //  == SECRET
+const XLS   = './WeeklyPlans/Tasks_latest.xlsx';                   // relativer Pfad
 
 /* --- 2 | Formular absenden --------------------------------------- */
 function submit(){
