@@ -12,7 +12,7 @@ li{margin:.3rem 0}
 <p><a href="update.html">Task eintragen</a> | <a href="index.html">zum Plan</a></p>
 
 <script>
-const API='https://script.google.com/macros/s/XXXXXXXX/exec';
+const API='https://script.google.com/macros/s/AKfycbwvVTEA2W2ECiEINGi6frRuLI_oun157C-0VmC5IX8EIsUi82n_INf1cb9H2zCxezkp/exec';
 fetch(API).then(r=>r.json()).then(all=>{
   const ul=document.getElementById('list'); ul.innerHTML='';
   all.slice(1).reverse().slice(0,15).forEach(row=>{
