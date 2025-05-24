@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>FLUR 3N – Task-Status (live)</title>
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css">
+<style>
+body{font-family:system-ui,Arial;margin:1.4rem}
+h2{text-align:center}
+.wrap{overflow:auto;border:1px solid #666;border-radius:4px}
+table{border-collapse:collapse}
+th,td{border:1px solid #666;padding:.35rem .45rem;text-align:center}
+td.task{white-space:pre-wrap;text-align:left;width:320px}
+.done{background:#c8ffc8}
+</style>
+</head>
+<body>
+<h2>FLUR 3N – Wochenplan (Erledigt-Status)</h2>
+<div class="wrap"><table id="plan"><tbody><tr><td>Lade Daten …</td></tr></tbody></table></div>
+<p style="text-align:right;margin-top:.6rem">
+  <a href="index.html">⬅ zum Original-Viewer</a>
+</p>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
+<script>
+const XLS_PATH   = 'WeeklyPlans/Tasks_latest.xlsx';
+const LOG_API    = 'https://script.google.com/macros/s/AKfycbwvVTEA2W2ECiEINGi6frRuLI_oun157C-0VmC5IX8EIsUi82n_INf1cb9H2zCxezkp/exec';
+
+(async()=>{
+  const planTbl = document.getElementById('plan');
+
+  /* --- 1 | Excel laden -------------------------------------------------- */
+  const wb = XLSX.read(await (await fetch(XLS_PATH)).arrayBuffer(),{type:'array'});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  let rows = XLSX.utils.sheet_to_json(ws,{header:1,range:3});
+  const head = rows.shift();
+
+  // überzählige Zeilen/Spalten trimmen
+  const lastCol=head.reduce((a,v,i)=>v!==undefined?i:a,0);
+  head.length=lastCol+1;
+  rows=rows.map(r=>{while(r.length<lastCol+1)r.push(undefined);return r;});
+  const cut=rows.findIndex(r=>r.every(c=>c===undefined));
+  if(cut!==-1) rows=rows.slice(0,cut);
+
+  /* --- 2 | Log holen ---------------------------------------------------- */
+  const log = await (await fetch(LOG_API)).json();   // 2-D Array
+  const done = new Set(log.slice(1).map(r=>`${r[2]}‖${r[1]}`)); // "task‖person"
+
+  /* --- 3 | HTML-Tabelle bauen ------------------------------------------ */
+  const thead='<thead><tr><th>Task / Description</th>'+
+      head.slice(1).map(c=>`<th>${c||''}</th>`).join('')+'</tr></thead>';
+
+  const tbody='<tbody>'+rows.map(r=>{
+    const t=r[0]||'';
+    return '<tr>'+r.map((c,i)=>{
+      if(i===0) return `<td class="task">${t}</td>`;
+      const person=head[i]||'';
+      const cls = done.has(`${t}‖${person}`) ? 'done' : '';
+      return `<td class="${cls}">${c||''}</td>`;
+    }).join('')+'</tr>';
+  }).join('')+'</tbody>';
+
+  planTbl.innerHTML = thead+tbody;
+  new simpleDatatables.DataTable(planTbl,{searchable:false,paging:false,fixedHeight:true});
+})();
+</script>
+</body>
+</html>
