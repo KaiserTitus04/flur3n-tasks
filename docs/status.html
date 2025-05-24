@@ -1,25 +1,19 @@
-<!doctype html><html><head>
-<meta charset="utf-8"><title>Task-Status</title>
-<style>
+<!doctype html><html><head><meta charset="utf-8">
+<title>Task-Status</title><style>
 body{font-family:system-ui,Arial;max-width:600px;margin:1.8rem auto}
-.done{color:#0a0}
-.todo{color:#a00}
-li{margin:.3rem 0}
-</style>
-</head><body>
+.done{color:#070} li{margin:.3rem 0}
+</style></head><body>
 <h2>Wer hat seine Tasks erledigt?</h2>
-<ul id="list"><li>Lade Daten …</li></ul>
-<p><a href="update.html">Task eintragen</a> | <a href="index.html">zum Plan</a></p>
+<ul id="ul"><li>Lade …</li></ul>
+<p><a href="update.html">Eintragen</a> | <a href="log.html">kompletter Log</a></p>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbwvVTEA2W2ECiEINGi6frRuLI_oun157C-0VmC5IX8EIsUi82n_INf1cb9H2zCxezkp/exec';
-fetch(API).then(r=>r.json()).then(all=>{
-  const ul=document.getElementById('list'); ul.innerHTML='';
-  all.slice(1).reverse().slice(0,15).forEach(row=>{
-    const [ts,person,task]=row;
+const API='https://script.google.com/macros/s/AKfycbwW6Hk57VfCbVX1t3Q_xxTh1DKqpM3hORWwq3A0B_COmjmHeyHTx01xnvqnq4vuiE3m/exec';
+fetch(API).then(r=>r.json()).then(js=>{
+  const ul=document.getElementById('ul'); ul.innerHTML='';
+  js.slice(1).reverse().slice(0,15).forEach(r=>{
     ul.insertAdjacentHTML('beforeend',
-      `<li><span class="done">✓</span> <strong>${person}</strong> – ${task} <em>${new Date(ts).toLocaleString()}</em></li>`);
+      `<li><span class=done>✓</span> <strong>${r[1]}</strong> – ${r[2]} <em>${new Date(r[0]).toLocaleString()}</em></li>`);
   });
 });
-</script>
-</body></html>
+</script></body></html>

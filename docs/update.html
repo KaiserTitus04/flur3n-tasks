@@ -1,54 +1,46 @@
-<!doctype html><html><head>
-<meta charset="utf-8"><title>Task melden</title>
-<style>
+<!doctype html><html><head><meta charset="utf-8">
+<title>Task melden</title><style>
 body{font-family:system-ui,Arial;max-width:420px;margin:2rem auto}
-label{display:block;margin:.8rem 0 .2rem}
-button{margin-top:1rem;padding:.4rem 1rem}
-#msg{margin-top:.8rem}
-</style>
-</head><body>
+label{display:block;margin:.8rem 0 .2rem} button{margin-top:1rem}
+</style></head><body>
 <h2>Ich habe meinen Task erledigt</h2>
 
 <label>Name:<input id="name" required></label>
 
-<label>Task dieser Woche:
-  <select id="task">
-    <option>Sort cupboards, Clean all fridges and waste containers & Vacuum</option>
-    <option>Clean sink, cooking area, devices and unknown items twice a week</option>
-    <option>Empty biowaste every second day</option>
-    <option>Wash kitchen towels • Clean cupboards + walls in kitchen area</option>
-    <option>Buy items on list • Return deposit from "Pfand" box</option>
-    <option>Empty glass waste container • Clean left oven (incl. trays)</option>
-    <option>Empty paper waste • Clean right oven (incl. trays)</option>
-  </select>
-</label>
+<label>Task:
+<select id="task">
+  <option>Sort cupboards, Clean all fridges and waste containers & Vacuum</option>
+  <option>Clean sink, cooking area, devices and unknown items twice a week</option>
+  <option>Empty biowaste every second day</option>
+  <option>Wash kitchen towels • Clean cupboards + walls in kitchen area</option>
+  <option>Buy items on list • Return deposit from "Pfand" box</option>
+  <option>Empty glass waste container • Clean left oven (incl. trays)</option>
+  <option>Empty paper waste • Clean right oven (incl. trays)</option>
+</select></label>
 
-<label>Kommentar (optional):
-  <input id="comment">
-</label>
+<label>Kommentar (optional):<input id="comment"></label>
 
-<button onclick="submit()">✓ Eintragen</button>
-<p id="msg"></p>
+<button onclick="send()">✓ Eintragen</button><p id="msg"></p>
 
 <script>
-const API   = 'https://script.google.com/macros/s/AKfycbwvVTEA2W2ECiEINGi6frRuLI_oun157C-0VmC5IX8EIsUi82n_INf1cb9H2zCxezkp/exec';   // Web-App URL
-const KEY   = 'YOUR_SUPER_SECRET_KEY';                                        //  == SECRET
-const XLS   = './WeeklyPlans/Tasks_latest.xlsx';                   // relativer Pfad
+const API = 'https://script.google.com/macros/s/AKfycbwW6Hk57VfCbVX1t3Q_xxTh1DKqpM3hORWwq3A0B_COmjmHeyHTx01xnvqnq4vuiE3m/exec';
+const KEY = 'superkey12====2////dvvvvfeoijsfioj...ffesaf,uu';
 
-/* --- 2 | Formular absenden --------------------------------------- */
-function submit(){
-  const n=$('#name').value.trim(), t=$('#task').value, c=$('#comment').value.trim(), m=$('#msg');
-  if(!n){m.textContent='Bitte Namen eingeben';return;}
-  fetch(API,{
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:new URLSearchParams({key:KEY,person:n,task:t,comment:c})
-  })
-  .then(r=>r.text())
-  .then(txt=> m.textContent = txt==='ok' ? '✓ gespeichert – Danke!' : 'Fehler: '+txt)
-  .catch(err=>m.textContent='Netzwerk-Fehler '+err);
+function send(){
+  const n=document.getElementById('name').value.trim();
+  if(!n){msg('Name fehlt');return;}
+  const params=new URLSearchParams({
+    key:KEY,
+    person:n,
+    task:document.getElementById('task').value,
+    comment:document.getElementById('comment').value.trim()
+  });
+  fetch(API,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:params})
+     .then(r=>r.text()).then(t=>msg(t==='ok'?'✓ gespeichert':'Fehler: '+t))
+     .catch(e=>msg('Netzwerkfehler'));
 }
-function $(q){return document.querySelector(q);}
+function msg(t){document.getElementById('msg').textContent=t;}
 </script>
-<p><a href="index.html">⬅ zurück zum Plan</a> <a href="status.html">Status anzeigen</a> </p>
+
+<p><a href="status.html">Status ansehen</a> | <a href="index.html">Plan</a></p>
 </body></html>
