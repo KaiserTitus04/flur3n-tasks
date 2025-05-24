@@ -29,14 +29,18 @@ const KEY   = 'YOUR_SUPER_SECRET_KEY';                                        //
 const XLS   = './WeeklyPlans/Tasks_latest.xlsx';                   // relativer Pfad
 
 /* --- 1 | Dropdown füllen ----------------------------------------- */
-fetch(XLS).then(r=>r.arrayBuffer()).then(buf=>{
-  const ws = XLSX.read(buf,{type:'array'}).Sheets.Sheet1;
-  // ab Zeile 5 Spalte A (Tasks) bis erste Leerzeile
-  const arr = XLSX.utils.sheet_to_json(ws,{header:1,range:4});      
-  const sel = document.getElementById('task');
-  sel.innerHTML='';                                               // Platzhalter löschen
-  arr.forEach(r=>{if(r[0]) sel.insertAdjacentHTML('beforeend',`<option>${r[0]}</option>`);});
-}).catch(e=>document.getElementById('msg').textContent='⚠ Aufgabenliste konnte nicht geladen werden');
+<label>Task diese Woche:
+  <select id="task">
+    <option>Sort cupboards, Clean all fridges and waste containers & Vacuum</option>
+    <option>Clean sink, cooking area, devices and unknown items twice a week</option>
+    <option>Empty biowaste every second day</option>
+    <option>Wash kitchen towels • Clean cupboards + walls in kitchen area</option>
+    <option>Buy items on list • Return deposit from "Pfand" box</option>
+    <option>Empty glass waste container • Clean left oven (incl. trays)</option>
+    <option>Empty paper waste • Clean right oven (incl. trays)</option>
+  </select>
+</label>
+
 
 /* --- 2 | Formular absenden --------------------------------------- */
 function submit(){
